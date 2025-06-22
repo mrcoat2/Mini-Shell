@@ -95,7 +95,11 @@ int countLines(const char *filename) {
     return lines;
 }
 
-void create_account() {
+int create_account(int first_time, int logged_in) {
+    if (logged_in!=0) {
+        return -1;
+    }
+
     char no_spaces = ' ';
 
     FILE* users_ptr;
@@ -106,7 +110,7 @@ void create_account() {
     new_user:
         printf("Username: ");
         char* username = malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
-        scanf("%99s", username);
+        scanf("%40s", username);
 
         if (strchr(username, no_spaces)) { //checks if the username has a space, and them tells them they can't
             printf("Username cannot contain spaces.\n");
@@ -127,8 +131,16 @@ void create_account() {
             printf("Passwords do not match, please try again\n");
             goto new_pass;
         }
-
     
+    int id;
+    int* id_ptr = &id;
+
+    if (first_time==0) {
+        scanf("%d", id_ptr);
+    } else {
+        id = 0;
+    }
+
     int* strin = encrypt(passwd);
     char* crypted = malloc(32 * sizeof(char) + 1);
     crypted = int_array_to_hex_string(strin, 16);
@@ -138,7 +150,8 @@ void create_account() {
         printf("Trouble reading file...");
         exit(1);
     }
-    sprintf(username + strlen(username), " %s %d\n", crypted, lineCount);
+
+    sprintf(username + strlen(username), " %s %d\n", crypted, id);
 
     size_t length = strlen(username) / sizeof(char);
 
@@ -148,8 +161,9 @@ void create_account() {
     free(passwd);
     free(check_pass);
     free(strin);
-    free(crypted);   
-
+    free(crypted); 
+    
+    return 0;
 }
 
 // Takes in the user and passwd char to return -1 if that user doesn't exist and the user id if it does.
@@ -206,7 +220,7 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     if (strcmp(cmd,"mkuser")==0) {
         strcpy(output, "Running create_account...\n");
         
-        create_account();
+        create_account(0, logged_in);
     }
 
     if (strcmp(cmd,"ahash")==0) {
@@ -246,11 +260,17 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     }
     
     if (strcmp(cmd,"whoami")==0) {
-        strcpy(cmd,username);
-        strcat(output," with an id of ");
+        char id_string[4];
+        sprintf(id_string, "%d", logged_in);
 
-        output[strlen(username)] = '\n';
-        output[strlen(username)+1] = '\0';
+        strcpy(output, username);
+        strcat(output, " with an id of ");
+        strcat(output, id_string);
+
+        char *nullPtr = strchr(output, '\0');
+
+        nullPtr[0] = '\n';
+        nullPtr[1] = '\0';
         
     }
 
@@ -278,7 +298,7 @@ int main() {
             exit(1);
         } else {
             fclose(fptr);
-            create_account();
+            create_account(1, 0);
         }
         
     } else {
