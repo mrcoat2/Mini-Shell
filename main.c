@@ -1,14 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
 #include <string.h>
 #include <ctype.h>
 #include "ahash.h"
 
 #ifdef _WIN32
 #include <windows.h>
+#include <conio.h>
+const char enter_char = '\r'; // Enter key on windoqws
 #else
 #include <time.h>
+#include <unistd.h>
+#include <termios.h>
+const char enter_char = '\n'; // Enter key on linux
 #endif
 
 //
@@ -34,7 +38,19 @@ void sleep_ms(int milliseconds) {
 #endif
 }
 
-
+#ifndef _WIN32
+char getch(void) {
+    struct termios oldattr, newattr;
+    int ch;
+    tcgetattr(STDIN_FILENO, &oldattr);
+    newattr = oldattr;
+    newattr.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
+    ch = getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr);
+    return ch;
+}
+#endif
 
 /// @brief clears the console depending if windows or other
 void clear() {
@@ -64,7 +80,7 @@ char* get_passwd() {
     int i = 0;
     char ch;
 
-    while ((ch = getch()) != '\r') { // '\r' is Enter key
+    while ((ch = getch()) != enter_char) { // '\r' is Enter key
         if (ch == '\b' && i > 0) {   // Handle backspace
             printf("\b \b");
             i--;
@@ -134,6 +150,7 @@ int create_account(int first_time, int logged_in) {
     
     int id;
     int* id_ptr = &id;
+    printf("Please enter what privelage the user has, 0 being root\n");
 
     if (first_time==0) {
         scanf("%d", id_ptr);
@@ -220,7 +237,10 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     if (strcmp(cmd,"mkuser")==0) {
         strcpy(output, "Running create_account...\n");
         
-        create_account(0, logged_in);
+        int result = create_account(0, logged_in);
+        if (result==-1) {
+            strcpy(output, "Error making user, not high enough privelage\n");
+        }
     }
 
     if (strcmp(cmd,"ahash")==0) {
