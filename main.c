@@ -200,6 +200,17 @@ int check_cred(const char* user, const char* passwd){
     return -1;
     
 }
+
+void shell() {
+
+#ifdef _WIN32
+    system("powershell");
+#else
+    system("/bin/bash");
+#endif
+    
+}
+
 // Function understand the command and do a function
 void handle_cmd(char* input, char* username, int logged_in, char* output) {
     char* cmd = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
@@ -274,12 +285,15 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
         
     }
 
+    if (strcmp(cmd,"shell")==0) {
+        shell();
+    }
+
     if (strcmp(cmd,"exit")==0) {
         exit(0);
     }
 
     free(cmd);
-
 }
 
 int main() {
