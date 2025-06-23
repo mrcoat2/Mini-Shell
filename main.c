@@ -186,6 +186,37 @@ int check_cred(const char* user, const char* passwd){
     return -1;
     
 }
+
+int confirm(char* msg, char _default) {
+    _default = tolower(_default);
+
+    printf("%s ", msg);
+    if (_default == 'y') {
+        printf("(Y/n): ");
+    } else {
+        printf("(y/N): ");
+    }
+    
+    char choice = getchar();
+    
+    printf("",choice);
+
+    switch (towlower(choice)) {
+        case 'y':
+            return 1;
+            
+        case 'n':
+            return 0;
+        
+        default:
+            if (_default=='y' && choice=='\n') {
+                return 1;
+            } else {
+                return  0;
+            }
+    }
+}
+
 // Function understand the command and do a function
 void handle_cmd(char* input, char* username, int logged_in, char* output) {
     char* cmd = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
@@ -255,6 +286,7 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     }
 
     if (strcmp(cmd,"exit")==0) {
+        free(cmd);
         exit(0);
     }
 
@@ -287,7 +319,7 @@ int main() {
     
 
 
-    printf("\nPlease enter username and password1\n");
+    printf("\nPlease enter username and password\n");
 
     char* username = malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
     char* passwd;
