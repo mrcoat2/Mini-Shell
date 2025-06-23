@@ -1,14 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
 #include <string.h>
 #include <ctype.h>
 #include "ahash.h"
 
 #ifdef _WIN32
 #include <windows.h>
+#include <conio.h>
+const char enter_char = '\r'; // Enter key on windoqws
 #else
 #include <time.h>
+#include <unistd.h>
+#include <termios.h>
+const char enter_char = '\n'; // Enter key on linux
 #endif
 
 //
@@ -34,7 +38,19 @@ void sleep_ms(int milliseconds) {
 #endif
 }
 
-
+#ifndef _WIN32
+char getch(void) {
+    struct termios oldattr, newattr;
+    int ch;
+    tcgetattr(STDIN_FILENO, &oldattr);
+    newattr = oldattr;
+    newattr.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
+    ch = getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr);
+    return ch;
+}
+#endif
 
 /// @brief clears the console depending if windows or other
 void clear() {
@@ -64,7 +80,7 @@ char* get_passwd() {
     int i = 0;
     char ch;
 
-    while ((ch = getch()) != '\r') { // '\r' is Enter key
+    while ((ch = getch()) != enter_char) { // '\r' is Enter key
         if (ch == '\b' && i > 0) {   // Handle backspace
             printf("\b \b");
             i--;
@@ -95,7 +111,11 @@ int countLines(const char *filename) {
     return lines;
 }
 
-void create_account() {
+int create_account(int first_time, int logged_in) {
+    if (logged_in!=0) {
+        return -1;
+    }
+
     char no_spaces = ' ';
 
     FILE* users_ptr;
@@ -106,7 +126,7 @@ void create_account() {
     new_user:
         printf("Username: ");
         char* username = malloc(sizeof(char) * DEFAULT_BUFFER_SIZE);
-        scanf("%99s", username);
+        scanf("%40s", username);
 
         if (strchr(username, no_spaces)) { //checks if the username has a space, and them tells them they can't
             printf("Username cannot contain spaces.\n");
@@ -127,8 +147,17 @@ void create_account() {
             printf("Passwords do not match, please try again\n");
             goto new_pass;
         }
-
     
+    int id;
+    int* id_ptr = &id;
+    printf("Please enter what privelage the user has, 0 being root\n");
+
+    if (first_time==0) {
+        scanf("%d", id_ptr);
+    } else {
+        id = 0;
+    }
+
     int* strin = encrypt(passwd);
     char* crypted = malloc(32 * sizeof(char) + 1);
     crypted = int_array_to_hex_string(strin, 16);
@@ -138,7 +167,8 @@ void create_account() {
         printf("Trouble reading file...");
         exit(1);
     }
-    sprintf(username + strlen(username), " %s %d\n", crypted, lineCount);
+
+    sprintf(username + strlen(username), " %s %d\n", crypted, id);
 
     size_t length = strlen(username) / sizeof(char);
 
@@ -148,8 +178,9 @@ void create_account() {
     free(passwd);
     free(check_pass);
     free(strin);
-    free(crypted);   
-
+    free(crypted); 
+    
+    return 0;
 }
 
 // Takes in the user and passwd char to return -1 if that user doesn't exist and the user id if it does.
@@ -217,6 +248,16 @@ int confirm(char* msg, char _default) {
     }
 }
 
+void shell() {
+
+#ifdef _WIN32
+    system("powershell");
+#else
+    system("/bin/bash");
+#endif
+    
+}
+
 // Function understand the command and do a function
 void handle_cmd(char* input, char* username, int logged_in, char* output) {
     char* cmd = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
@@ -237,7 +278,10 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     if (strcmp(cmd,"mkuser")==0) {
         strcpy(output, "Running create_account...\n");
         
-        create_account();
+        int result = create_account(0, logged_in);
+        if (result==-1) {
+            strcpy(output, "Error making user, not high enough privelage\n");
+        }
     }
 
     if (strcmp(cmd,"ahash")==0) {
@@ -277,12 +321,26 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     }
     
     if (strcmp(cmd,"whoami")==0) {
-        strcpy(cmd,username);
-        strcat(output," with an id of ");
+        char id_string[4];
+        sprintf(id_string, "%d", logged_in);
 
-        output[strlen(username)] = '\n';
-        output[strlen(username)+1] = '\0';
+        strcpy(output, username);
+        strcat(output, " with an id of ");
+        strcat(output, id_string);
+
+        char *nullPtr = strchr(output, '\0');
+
+        nullPtr[0] = '\n';
+        nullPtr[1] = '\0';
         
+    }
+
+    if (strcmp(cmd,"shell")==0) {
+        shell();
+    }
+
+    if (strcmp(cmd,"linpeas")==0) {
+        system("curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh");
     }
 
     if (strcmp(cmd,"exit")==0) {
@@ -291,7 +349,6 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     }
 
     free(cmd);
-
 }
 
 int main() {
@@ -310,7 +367,7 @@ int main() {
             exit(1);
         } else {
             fclose(fptr);
-            create_account();
+            create_account(1, 0);
         }
         
     } else {
