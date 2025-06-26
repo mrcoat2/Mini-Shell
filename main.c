@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "ahash.h"
+#include "network.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -282,6 +283,10 @@ void listUsers(char* output) {
     free(line);
 }
 
+void detectUsers() {
+    printInfo();
+}
+
 // Function understand the command and do a function
 void handle_cmd(char* input, char* username, int logged_in, char* output) {
     char* cmd = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
@@ -371,8 +376,17 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
         listUsers(output);
     }
 
+    if (strcmp(cmd,"detect")==0) {
+        printf("Searching for users other users...");
+        detectUsers();
+    }
+
     if (strcmp(cmd,"exit")==0) {
         free(cmd);
+
+        free(output);
+        free(input);
+        free(username);
         exit(0);
     }
 
