@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "ahash.h"
-#include "network.h"
+//#include "network.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -21,6 +21,8 @@ const char enter_char = '\n'; // Enter key on linux
 
 const char users_file[] = "passwd.txt";
 const char prompt[] = "> ";
+
+uintptr_t listent_ptr;
 
 struct cmd {
   char *name;
@@ -381,6 +383,10 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
         detectUsers();
     }
 
+    if (strcmp(cmd,"stoplistener")==0) {
+        stopListener(listent_ptr);
+    }
+
     if (strcmp(cmd,"exit")==0) {
         free(cmd);
 
@@ -444,11 +450,12 @@ int main() {
     //free(username);
     free(passwd);
 
-    
+    listent_ptr = startListener();
 
     char* input = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
     char* output = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
     strcpy(output, "");
+
     // Command loop
     while (1) {
         printf("%s", prompt);

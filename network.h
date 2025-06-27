@@ -1,13 +1,30 @@
-#define _CRT_SECURE_NO_WARNINGS   /* for MSVC strncpy safety warning */
+/*
+ * Compile on Linux/macOS:
+ *   gcc server.c -o server -lpthread
+ *
+ * Compile on Windows (MSVC):
+ *   cl /W4 server.c ws2_32.lib
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+
 #include <winsock2.h>
-#include <iphlpapi.h>
 #include <ws2tcpip.h>
+#include <process.h>          /* _beginthreadex */
+typedef SOCKET sock_t;
+#define close_socket closesocket
+#define THREAD_RETURN unsigned __stdcall
+
+#define _CRT_SECURE_NO_WARNINGS   /* for MSVC strncpy safety warning */
+#include <iphlpapi.h>
 
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "ws2_32.lib")
+
+#define LISTEN_PORT 52423
+#define BACKLOG     8           /* pending connections */
 
 /* -------------- helpers -------------- */
 
@@ -71,7 +88,8 @@ char *get_subnet_mask(void)
 /* -------------- demo -------------- */
 
 int scan_network() {
-    printf("Scanning..");
+    printf("Scanning...");
+    return 0;
 }
 
 int printInfo(void)
@@ -88,5 +106,76 @@ int printInfo(void)
 
     free(ip);
     free(mask);
+    return 0;
+}
+
+static unsigned __stdcall listener(void *arg)
+{
+    (void)arg;                   /* nothing passed in */
+
+    /* ---------- socket(), bind(), listen() ---------- */
+    SOCKET srv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (srv == INVALID_SOCKET) { perror("socket"); _endthreadex(1); }
+
+    struct sockaddr_in sa = {0};
+    sa.sin_family      = AF_INET;
+    sa.sin_addr.s_addr = htonl(INADDR_ANY);
+    sa.sin_port        = htons(LISTEN_PORT);
+
+    if (bind(srv, (SOCKADDR*)&sa, sizeof sa) == SOCKET_ERROR) {
+        perror("bind");  closesocket(srv);  _endthreadex(1);
+    }
+    if (listen(srv, BACKLOG) == SOCKET_ERROR) {
+        perror("listen");  closesocket(srv);  _endthreadex(1);
+    }
+
+    /*printf("[thread %lu] listening on port %u ...\n",
+           GetCurrentThreadId(), LISTEN_PORT);*/
+
+    /* ---------- accept loop ---------- */
+    for (;;) {
+        struct sockaddr_in cli; int clen = sizeof cli;
+        SOCKET c = accept(srv, (SOCKADDR*)&cli, &clen);
+        if (c == INVALID_SOCKET) { perror("accept");  break; }
+
+        char ip[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &cli.sin_addr, ip, sizeof ip);
+        // printf("  client %s:%u connected\n", ip, ntohs(cli.sin_port));
+        const char *msg = "👍";
+        send(c, msg, (int)strlen(msg), 0);
+
+
+        /* demo workload — immediately close; real code would hand off to worker */
+        closesocket(c);
+    }
+
+    closesocket(srv);
+    _endthreadex(0);
+    return 0; /* never reached */
+}
+
+uintptr_t startListener(void)
+{
+    /* ---- Winsock start-up ---- */
+    WSADATA wsa;
+    if (WSAStartup(MAKEWORD(2,2), &wsa)) {
+        fputs("WSAStartup failed\n", stderr); return 1;
+    }
+
+    /* ---- spawn listener thread ---- */
+    uintptr_t th = _beginthreadex(NULL, 0, listener, NULL, 0, NULL);
+    if (!th) { fputs("cannot start listener thread\n", stderr); return 1; }
+
+    /* ---- main thread could do other work here ---- */
+    // puts("Starting listener, disable with stoplistener");
+
+    return th;
+}
+
+int stopListener(uintptr_t th) {
+    /* ---- tidy up ---- */
+    WaitForSingleObject((HANDLE)th, INFINITE);
+    CloseHandle((HANDLE)th);
+    WSACleanup();
     return 0;
 }
