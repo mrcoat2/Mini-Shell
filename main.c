@@ -3,7 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 #include "ahash.h"
-//#include "network.h"
+#include "network.h"
+#include "passcheck.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -140,6 +141,12 @@ int create_account(int first_time, int logged_in) {
         printf("Password: ");
         
         char* passwd = get_passwd();
+        int check = check_passwd(passwd);
+
+        if (check != 1) {
+            printf("\nPassword doesn't meet requirements, please try again.\n");
+            goto new_pass;
+        }
 
         printf("\nConfirm password: ");
         char* check_pass = get_passwd();

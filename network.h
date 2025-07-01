@@ -113,8 +113,7 @@ static unsigned __stdcall listener(void *arg)
 {
     (void)arg;                   /* nothing passed in */
 
-    /* ---------- socket(), bind(), listen() ---------- */
-    SOCKET srv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    SOCKET srv = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (srv == INVALID_SOCKET) { perror("socket"); _endthreadex(1); }
 
     struct sockaddr_in sa = {0};
@@ -123,30 +122,27 @@ static unsigned __stdcall listener(void *arg)
     sa.sin_port        = htons(LISTEN_PORT);
 
     if (bind(srv, (SOCKADDR*)&sa, sizeof sa) == SOCKET_ERROR) {
-        perror("bind");  closesocket(srv);  _endthreadex(1);
-    }
-    if (listen(srv, BACKLOG) == SOCKET_ERROR) {
-        perror("listen");  closesocket(srv);  _endthreadex(1);
+        perror("bind"); closesocket(srv); _endthreadex(1);
     }
 
-    /*printf("[thread %lu] listening on port %u ...\n",
-           GetCurrentThreadId(), LISTEN_PORT);*/
-
-    /* ---------- accept loop ---------- */
+    /* ---------- receive/send loop ---------- */
     for (;;) {
-        struct sockaddr_in cli; int clen = sizeof cli;
-        SOCKET c = accept(srv, (SOCKADDR*)&cli, &clen);
-        if (c == INVALID_SOCKET) { perror("accept");  break; }
+        struct sockaddr_in cli;
+        int clen = sizeof(cli);
+        char buffer[1024];
 
+        int bytes_received = recvfrom(srv, buffer, sizeof(buffer) - 1, 0, (SOCKADDR*)&cli, &clen);
+        if (bytes_received == SOCKET_ERROR) {
+            perror("recvfrom"); break;
+        }
+
+        buffer[bytes_received] = '\0';  // Null-terminate for safe printing
         char ip[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &cli.sin_addr, ip, sizeof ip);
-        // printf("  client %s:%u connected\n", ip, ntohs(cli.sin_port));
+        inet_ntop(AF_INET, &cli.sin_addr, ip, sizeof(ip));
+        // printf("Received from %s:%u -> %s\n", ip, ntohs(cli.sin_port), buffer);
+
         const char *msg = "👍";
-        send(c, msg, (int)strlen(msg), 0);
-
-
-        /* demo workload — immediately close; real code would hand off to worker */
-        closesocket(c);
+        sendto(srv, msg, (int)strlen(msg), 0, (SOCKADDR*)&cli, clen);
     }
 
     closesocket(srv);
