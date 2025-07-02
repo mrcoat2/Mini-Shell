@@ -163,7 +163,7 @@ uintptr_t startListener(void)
     if (!th) { fputs("cannot start listener thread\n", stderr); return 1; }
 
     /* ---- main thread could do other work here ---- */
-    // puts("Starting listener, disable with stoplistener");
+    puts("Starting listener, disable with stoplistener");
 
     return th;
 }

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "ahash.h"
-#include "network.h"
+// #include "network.h"
 #include "passcheck.h"
 
 #ifdef _WIN32
@@ -21,6 +21,7 @@ const char enter_char = '\n'; // Enter key on linux
 #define DEFAULT_BUFFER_SIZE 100
 
 const char users_file[] = "passwd.txt";
+const char help_file[] = "cmdinfo.txt";
 const char prompt[] = "> ";
 
 uintptr_t listent_ptr;
@@ -292,8 +293,37 @@ void listUsers(char* output) {
     free(line);
 }
 
+void listcmds() {
+    FILE* cmd_ptr = fopen(help_file, "r");
+    if (cmd_ptr==NULL) {
+        printf("Error reading file data");
+        exit(1);
+    }
+
+    fseek(cmd_ptr, 0, SEEK_END);
+    long filesize = ftell(cmd_ptr);
+    rewind(cmd_ptr);
+
+    char *buffer = malloc(filesize + 2);
+    if (!buffer) {
+        perror("memory allocation failed");
+        fclose(cmd_ptr);
+        exit(1);
+    }
+
+    size_t read_size = fread(buffer, 1, filesize, cmd_ptr);
+    buffer[read_size] = '\n';
+    buffer[read_size+1] = '\0';
+
+    printf("%s", buffer);
+
+    free(buffer);
+    fclose(cmd_ptr);
+}
+
 void detectUsers() {
-    printInfo();
+    printf("Work in progress\n");
+    // printInfo();
 }
 
 // Function understand the command and do a function
@@ -343,8 +373,6 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     } 
 
     if (strcmp(cmd,"echo")==0) {
-        
-    
         if (delim_pos) {
             char* second_half = delim_pos + 1;
 
@@ -391,7 +419,23 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     }
 
     if (strcmp(cmd,"stoplistener")==0) {
-        stopListener(listent_ptr);
+        // stopListener(listent_ptr);
+    }
+
+    if (strcmp(cmd,"help")==0) {
+        if (delim_pos) {
+            char* second_half = delim_pos + 1;
+
+            strcpy(output,search(second_half, help_file));
+            output[strlen(output) + 1] = '\0';
+            output[strlen(output)] = '\n';           
+        } else {
+            strcpy(output, "Supply a command to search for info on it like \"help echo\" or if you want all commands type \"cmds\"\n");
+        }
+    }
+
+    if (strcmp(cmd,"cmds")==0) {
+        listcmds();
     }
 
     if (strcmp(cmd,"exit")==0) {
@@ -457,7 +501,7 @@ int main() {
     //free(username);
     free(passwd);
 
-    listent_ptr = startListener();
+    // listent_ptr = startListener();
 
     char* input = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
     char* output = malloc(DEFAULT_BUFFER_SIZE * sizeof(char));
