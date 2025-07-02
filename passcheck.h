@@ -6,6 +6,7 @@
 #define DEAFULT_BUFF 1024
 
 const char req_file[] = "pass_req.txt";
+const char _symbols[] = "~!@#$^&*()_+-=[]\\{}|;':,./<>?";
 
 // Returns 1 if the password meets requirement 0 if not
 int check_passwd(char *passwd){
@@ -14,6 +15,29 @@ int check_passwd(char *passwd){
     if (strlen(passwd) < pass_options[0]) {
         return -1;
     } 
+
+    // printf("%d", pass_options[2]);
+    if (pass_options[1] == 121) {
+        // printf("yes");
+        for(int i = 0; passwd[i]; i++){
+            if (passwd[i] != tolower(passwd[i])) {
+                goto symbols;
+            }
+        }   
+        return -1;
+    }
+    symbols:
+    if (pass_options[2] == 121) {
+        // printf("yes");
+        for(int i = 0; _symbols[i]; i++){
+            if (strchr(passwd,_symbols[i]) != NULL) {
+                goto good;
+            }
+        }   
+        return -1;
+    }
+    good:
+
     return 1;
 }
 
@@ -48,6 +72,9 @@ int read_req (int option[3]) {
     int upAndLow = 0;
 
     pass_length = atoi(search("LENGTH",req_file));
+    symbols = search("SYMBOLS",req_file)[0];
+    upAndLow = search("UPANDLOW",req_file)[0];
+    // printf("%c", search("SYMBOLS",req_file)[0]);
     
     option[0] = pass_length;
     option[1] = symbols;
