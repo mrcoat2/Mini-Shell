@@ -296,8 +296,13 @@ void listUsers(char* output) {
 void listcmds() {
     FILE* cmd_ptr = fopen(help_file, "r");
     if (cmd_ptr==NULL) {
-        printf("Error reading file data");
-        exit(1);
+        printf("Getting file data from github");
+#ifdef _WIN32
+        system("powershell -c \"curl https://raw.githubusercontent.com/mrcoat2/Mini-Shell/refs/heads/main/cmdinfo.txt\"");
+#else
+        system("wget https://raw.githubusercontent.com/mrcoat2/Mini-Shell/refs/heads/main/cmdinfo.txt");
+#endif
+
     }
 
     fseek(cmd_ptr, 0, SEEK_END);

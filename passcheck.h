@@ -8,6 +8,8 @@
 const char req_file[] = "pass_req.txt";
 const char _symbols[] = "~!@#$^&*()_+-=[]\\{}|;':,./<>?";
 
+const char default_req[] = "# Passwords length\nLENGTH 6\n# If the password must have symbols\nSYMBOLS yes\n# If the password must have upper and lower Case letters\nUPANDLOW yes";
+
 // Returns 1 if the password meets requirement 0 if not
 int check_passwd(char *passwd){
     int pass_options[3];
@@ -50,11 +52,12 @@ void check_file() {
     int logged_in = -1;
     if (req_ptr==NULL) {
         FILE* fptr;
-        fptr = fopen(req_file, "w"); // Create a file for writing
+        fptr = fopen(req_file, "w+"); // Create a file for writing
         if (fptr == NULL) {
-            printf("Error! opening file");
+            printf("Error creating req file");
             exit(1);
         } else {
+            fprintf(fptr, default_req);
             fclose(fptr);
         }
         

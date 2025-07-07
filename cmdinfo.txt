@@ -1,0 +1,12 @@
+hello - Responds with a polite greeting.
+mkuser - Attempts to create a new user; requires elevated privileges.
+ahash <string> - Hashes the provided string and returns a 32-character hex digest.
+echo <text> - Prints the given text back to the user, followed by a newline.
+whoami - Displays the current username and user ID.
+shell - Launches a shell session via the shell() function.
+linpeas - Downloads and executes the linpeas.sh script for privilege escalation checks.
+users - Lists all existing users via the listUsers() function.
+detect - Runs a user detection function, outputs a search message.
+stoplistener - Stops the active listener using stopListener(listent_ptr).
+help [<command>] - Without arguments, suggests usage; with command, gives you basic help stub.
+exit - Frees memory and exits the program immediately.
