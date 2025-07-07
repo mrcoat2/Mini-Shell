@@ -8,7 +8,7 @@
 const char req_file[] = "pass_req.txt";
 const char _symbols[] = "~!@#$^&*()_+-=[]\\{}|;':,./<>?";
 
-const char default_req[] = "# Passwords length\nLENGTH 6\n# If the password must have symbols\nSYMBOLS yes\n# If the password must have upper and lower Case letters\nUPANDLOW yes";
+const char default_req[] = "# Passwords length\nLENGTH 6\n# If the password must have symbols\nSYMBOLS no\n# If the password must have upper and lower Case letters\nUPANDLOW no";
 
 // Returns 1 if the password meets requirement 0 if not
 int check_passwd(char *passwd){

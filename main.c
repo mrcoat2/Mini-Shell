@@ -296,14 +296,15 @@ void listUsers(char* output) {
 void listcmds() {
     FILE* cmd_ptr = fopen(help_file, "r");
     if (cmd_ptr==NULL) {
-        printf("Getting file data from github");
+        printf("Getting file data from github\n");
 #ifdef _WIN32
-        system("powershell -c \"curl https://raw.githubusercontent.com/mrcoat2/Mini-Shell/refs/heads/main/cmdinfo.txt\"");
+        system("powershell -c \"curl https://raw.githubusercontent.com/mrcoat2/Mini-Shell/refs/heads/main/cmdinfo.txt -O cmdinfo.txt\"");
 #else
         system("wget https://raw.githubusercontent.com/mrcoat2/Mini-Shell/refs/heads/main/cmdinfo.txt");
 #endif
 
     }
+    cmd_ptr = fopen(help_file, "r");
 
     fseek(cmd_ptr, 0, SEEK_END);
     long filesize = ftell(cmd_ptr);

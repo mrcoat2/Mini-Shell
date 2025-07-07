@@ -1,6 +1,6 @@
 # Passwords length
 LENGTH 6
 # If the password must have symbols
-SYMBOLS yes
+SYMBOLS no
 # If the password must have upper and lower Case letters
 UPANDLOW no
